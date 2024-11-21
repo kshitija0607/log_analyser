@@ -1,0 +1,96 @@
+#!/bin/bash
+
+# Define the log file path
+LOG_FILE="/var/log/syslog"
+
+# Function to extract errors from the log file
+extract_errors() {
+    echo "=== Errors ==="
+    grep -i "error" "$LOG_FILE"
+}
+
+# Function to extract warnings from the log file
+extract_warnings() {
+    echo "=== Warnings ==="
+    grep -i "warning" "$LOG_FILE"
+}
+
+# Function to extract access patterns from the log file
+extract_access() {
+    echo "=== Access Patterns ==="
+    grep -i "access" "$LOG_FILE"
+}
+
+# Function to display system uptime
+display_uptime() {
+    echo "=== System Uptime ==="
+    uptime
+}
+
+# Function to display CPU usage
+display_cpu_usage() {
+    echo "=== CPU Usage ==="
+    top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print "CPU Usage: " 100 - $1 "%"}'
+}
+
+# Function to display memory usage
+display_memory_usage() {
+    echo "=== Memory Usage ==="
+    free -h | grep Mem
+}
+
+# Function to display disk usage
+display_disk_usage() {
+    echo "=== Disk Usage ==="
+    df -h | grep -E '^/dev/'
+}
+
+# Function to display system load averages
+display_load_average() {
+    echo "=== Load Average ==="
+    uptime | awk -F'load average: ' '{ print $2 }'
+}
+
+# Function to display system downtime (last reboot time)
+display_downtime() {
+    echo "=== System Downtime ==="
+    # Get the last reboot time
+    LAST_REBOOT=$(who -b | awk '{print $3, $4}')
+    echo "Last reboot was on: $LAST_REBOOT"
+
+    # Calculate downtime (current time - last reboot time)
+    CURRENT_TIME=$(date +%s)
+    LAST_REBOOT_TIME=$(date -d "$LAST_REBOOT" +%s)
+    DOWNTIME=$((CURRENT_TIME - LAST_REBOOT_TIME))
+
+    # Display downtime in human-readable format (e.g., hours, minutes)
+    DOWNTIME_HOURS=$((DOWNTIME / 3600))
+    DOWNTIME_MINUTES=$(( (DOWNTIME % 3600) / 60 ))
+    echo "Downtime since last reboot: $DOWNTIME_HOURS hours and $DOWNTIME_MINUTES minutes"
+}
+
+# Main function to run the script
+main() {
+    echo "Log Analysis Report"
+    echo "==================="
+
+    extract_errors
+    extract_warnings
+    extract_access
+
+    echo "==================="
+
+    # Display system metrics
+    display_uptime
+    display_cpu_usage
+    display_memory_usage
+    display_disk_usage
+    display_load_average
+    display_downtime
+
+    echo "==================="
+    echo "Analysis complete."
+}
+
+# Run the main function
+main
